@@ -1,0 +1,38 @@
+# Root
+.env
+.DS_Store
+
+# Backend (FastAPI / Python)
+backend/venv*/
+backend/__pycache__/
+backend/*.pyc
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/instance/
+backend/.webassets-cache
+
+# Frontend (React / Vite / Node)
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.nx/
+frontend/coverage/
+frontend/.env*
+!frontend/.env.example
+
+# Environment/Vars
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project specific caches
+DATA/
+sme-app/node_modules/
