@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { askExpert, checkHealth, fetchRoleRules, fetchHallucinationAnalysis, fetchCustomRoles, saveCustomRole, generateRules, uploadKnowledgeFile } from './api';
 import './index.css';
 
@@ -764,6 +765,7 @@ function App() {
                     </form>
                 </div>
             </main>
+            <SpeedInsights />
         </div>
     );
 }
