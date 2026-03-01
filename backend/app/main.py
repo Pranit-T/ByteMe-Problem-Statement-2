@@ -4,10 +4,20 @@ import json
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+import io
+import pypdf
+import docx
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from groq import Groq
+import openai
+from dotenv import load_dotenv
+
+env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+load_dotenv(env_path)
+print(f"LOADING ENV FROM: {env_path}")
+print(f"SUPABASE_URL is: {os.getenv('SUPABASE_URL')}")
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -18,12 +28,36 @@ logger = logging.getLogger("sme-backend")
 # ---------------------------------------------------------------------------
 # Groq Client
 # ---------------------------------------------------------------------------
-GROQ_API_KEY = os.getenv(
-    "GROQ_API_KEY",
-    "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",
-)
-client = Groq(api_key=GROQ_API_KEY)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 MODEL = "llama-3.3-70b-versatile"
+
+# ---------------------------------------------------------------------------
+# OpenAI Client
+# ---------------------------------------------------------------------------
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+openai_client = openai.OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+OPENAI_MODEL = "gpt-4o-mini"
+
+# ---------------------------------------------------------------------------
+# API-as-a-Service Client
+# ---------------------------------------------------------------------------
+BYTEME_API_KEY = os.getenv("BYTEME_API_KEY", "sk-byteme-beta")
+
+# ---------------------------------------------------------------------------
+# Supabase Client
+# ---------------------------------------------------------------------------
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+supabase = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        from supabase import create_client, Client
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        logger.info("Supabase client initialized successfully.")
+    except Exception as e:
+        logger.error(f"Failed to initialize Supabase: {e}")
 
 # ---------------------------------------------------------------------------
 # Hardcoded Expert Definitions
@@ -143,6 +177,24 @@ app.add_middleware(
 class ExpertRequest(BaseModel):
     question: str
     plugin: str
+    provider: str = "groq"
+
+class CustomRole(BaseModel):
+    role_name: str
+    core_directive: str
+    expert_rules: list[str]
+    roadmap: list[dict]
+    knowledge_base: str | None = None
+
+class GenerateRulesRequest(BaseModel):
+    role_name: str
+    knowledge_base: str | None = None
+    provider: str = "groq"
+
+class ChatCompletionRequest(BaseModel):
+    model: str
+    messages: list[dict]
+    temperature: float = 0.7
 
 
 # ---------------------------------------------------------------------------
@@ -155,27 +207,154 @@ async def health():
 
 @app.get("/api/role-rules/{role}")
 async def get_role_rules(role: str):
-    """Return the hardcoded rules + roadmap for a role."""
+    """Return the hardcoded rules + roadmap for a role, checking Supabase if missing."""
     profile = EXPERT_PROFILES.get(role)
+    
+    if not profile and supabase:
+        try:
+            res = supabase.table("custom_roles").select("*").eq("role_name", role).execute()
+            if res.data and len(res.data) > 0:
+                profile = res.data[0]
+        except Exception as e:
+            logger.error(f"Error fetching {role} from Supabase: {e}")
+            
     if not profile:
         raise HTTPException(status_code=404, detail=f"Unknown role: {role}")
+        
     return {
         "expert_rules": profile["expert_rules"],
         "roadmap": profile["roadmap"],
     }
 
+@app.get("/api/custom-roles")
+async def get_custom_roles():
+    if not supabase:
+        return {"roles": []}
+    try:
+        res = supabase.table("custom_roles").select("*").execute()
+        return {"roles": res.data}
+    except Exception as e:
+        logger.error(f"Failed to fetch roles: {e}")
+        return {"roles": []}
+
+@app.post("/api/custom-roles")
+async def create_custom_role(role: CustomRole):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    try:
+        data = {
+            "role_name": role.role_name,
+            "core_directive": role.core_directive,
+            "expert_rules": role.expert_rules,
+            "roadmap": role.roadmap,
+            "knowledge_base": role.knowledge_base
+        }
+        res = supabase.table("custom_roles").upsert(data).execute()
+        return {"status": "success", "data": res.data}
+    except Exception as e:
+        logger.error(f"Failed to save role: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/extract-text")
+async def extract_text(file: UploadFile = File(...)):
+    try:
+        content = await file.read()
+        text = ""
+        filename = file.filename.lower()
+        if filename.endswith(".txt"):
+            text = content.decode("utf-8", errors="replace")
+        elif filename.endswith(".pdf"):
+            pdf = pypdf.PdfReader(io.BytesIO(content))
+            text = "\n".join(page.extract_text() for page in pdf.pages if page.extract_text())
+        elif filename.endswith(".docx"):
+            doc = docx.Document(io.BytesIO(content))
+            text = "\n".join(para.text for para in doc.paragraphs)
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file format")
+            
+        return {"text": text.strip()}
+    except Exception as e:
+        logger.error(f"Text extraction failed: {e}")
+        raise HTTPException(status_code=500, detail="Failed to extract text from file")
+
+@app.post("/api/generate-rules")
+async def generate_rules(request: GenerateRulesRequest, http_req: Request):
+    kb_injection = f'\nAdditionally, strictly enforce these rules and insights from the user-provided knowledge base:\n"""{request.knowledge_base}"""\n' if request.knowledge_base else ''
+    
+    system_prompt = f"""You are an expert AI system designer.
+A user wants to create a new AI persona for the role: "{request.role_name}".
+{kb_injection}
+Please generate the following structured JSON configuration for this persona:
+1. "core_directive": A succinct 2-sentence directive outlining their primary concerns and approach.
+2. "expert_rules": An array of exactly 3 strict rules this expert must follow when answering questions.
+3. "roadmap": An array of exactly 3 step objects, each with "step" (title) and "desc" (description), outlining how this expert approaches a problem.
+
+Return ONLY the JSON."""
+
+    groq_key = http_req.headers.get("x-groq-key") or os.getenv("GROQ_API_KEY")
+    openai_key = http_req.headers.get("x-openai-key") or os.getenv("OPENAI_API_KEY")
+    local_groq = Groq(api_key=groq_key) if groq_key else client
+    local_openai = OpenAI(api_key=openai_key) if openai_key else openai_client
+
+    loop = asyncio.get_event_loop()
+    def _call_ai():
+        if request.provider == "openai":
+            try:
+                return local_openai.chat.completions.create(
+                    model=OPENAI_MODEL,
+                    messages=[{"role": "user", "content": system_prompt}],
+                    response_format={"type": "json_object"},
+                    temperature=0.7,
+                )
+            except Exception as e:
+                logger.warning(f"OpenAI failed ({e}), gracefully degrading to Groq.")
+                # Fallback to Groq
+                return local_groq.chat.completions.create(
+                    model=MODEL,
+                    messages=[{"role": "user", "content": system_prompt}],
+                    response_format={"type": "json_object"},
+                    temperature=0.7,
+                )
+        else:
+            return local_groq.chat.completions.create(
+                model=MODEL,
+                messages=[{"role": "user", "content": system_prompt}],
+                response_format={"type": "json_object"},
+                temperature=0.7,
+            )
+    
+    try:
+        completion = await loop.run_in_executor(None, _call_ai)
+        return json.loads(completion.choices[0].message.content)
+    except Exception as e:
+        logger.error("generate rules error: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to generate rules")
+
 
 @app.post("/api/ask-expert")
-async def ask_expert(request: ExpertRequest):
+async def ask_expert(request: ExpertRequest, http_req: Request):
     try:
-        role_context = _pretty_role(request.plugin)
-        profile = EXPERT_PROFILES.get(request.plugin)
+        expert_role = request.plugin
+        profile = EXPERT_PROFILES.get(expert_role)
+
+        if not profile and supabase:
+            try:
+                res = supabase.table("custom_roles").select("*").eq("role_name", expert_role).execute()
+                if res.data and len(res.data) > 0:
+                    profile = res.data[0]
+            except Exception as e:
+                logger.error(f"Error fetching {expert_role} from Supabase for query: {e}")
 
         if profile:
             # ── Expert mode: inject hardcoded rules as guardrails ──
+            role_context = _pretty_role(expert_role)
             rules_block = "\n".join(
                 f"  Rule {i+1}: {r}" for i, r in enumerate(profile["expert_rules"])
             )
+            
+            if profile.get("knowledge_base"):
+                rules_block += f"\n\nADDITIONAL STRICT KNOWLEDGE BASE RULES TO ENFORCE:\n{profile['knowledge_base']}"
+
             roadmap_block = "\n".join(
                 f"  Step {i+1} — {item['step']}: {item['desc']}"
                 for i, item in enumerate(profile["roadmap"])
@@ -196,15 +375,14 @@ YOUR MANDATORY ROADMAP STRUCTURE (your response must reference or follow this):
 When answering:
 - Filter the question through your {role_context} expertise ONLY.
 - Highlight the concerns, risks, and best practices that a {role_context} would prioritise.
-- If the question touches areas outside your domain, acknowledge them briefly but
-  redirect your detailed analysis to the {role_context} perspective.
-- Explicitly reference your rules and roadmap steps where relevant.
 - Be deeply technical and domain-specific. Generic answers are unacceptable.
 
 Provide a structured response in JSON format with these exact keys:
 - "answer": A detailed Markdown string answering from your {role_context} perspective. Must demonstrate adherence to your expert rules.
 - "accuracy": Integer 0-100 representing your domain-specific confidence.
-- "citations": List of strings citing relevant industry standards, codes, papers, or frameworks from the {role_context} field."""
+- "citations": List of strings citing relevant industry standards, codes, papers, or frameworks from the {role_context} field.
+
+FORMATTING REQUIREMENT: You MUST use a hard newline (return carriage) after every single Rule or Step. Do not combine them into a single paragraph. Render them as distinct bullet points or numbered lists."""
 
         else:
             # ── Base model mode (plugin='none'): general-purpose answer ──
@@ -214,21 +392,56 @@ Provide a structured response in JSON format with these keys:
 - "accuracy": Integer 0-100 representing your confidence.
 - "citations": List of strings citing relevant sources."""
 
+        groq_key = http_req.headers.get("x-groq-key") or os.getenv("GROQ_API_KEY")
+        openai_key = http_req.headers.get("x-openai-key") or os.getenv("OPENAI_API_KEY")
+        local_groq = Groq(api_key=groq_key) if groq_key else client
+        local_openai = OpenAI(api_key=openai_key) if openai_key else openai_client
+
         loop = asyncio.get_event_loop()
 
-        def _call_groq():
-            return client.chat.completions.create(
-                model=MODEL,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": request.question},
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.2,
-            )
+        def _call_ai():
+            if request.provider == "openai":
+                try:
+                    res = local_openai.chat.completions.create(
+                        model=OPENAI_MODEL,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": request.question},
+                        ],
+                        response_format={"type": "json_object"},
+                        temperature=0.2,
+                    )
+                    return res, OPENAI_MODEL
+                except Exception as e:
+                    logger.warning(f"OpenAI ask_expert failed ({e}), falling back to Groq.")
+                    res = local_groq.chat.completions.create(
+                        model=MODEL,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": request.question},
+                        ],
+                        response_format={"type": "json_object"},
+                        temperature=0.2,
+                    )
+                    return res, MODEL
+            else:
+                res = local_groq.chat.completions.create(
+                    model=MODEL,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": request.question},
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.2,
+                )
+                return res, MODEL
 
-        completion = await loop.run_in_executor(None, _call_groq)
+        completion, actual_model_used = await loop.run_in_executor(None, _call_ai)
         response_data = json.loads(completion.choices[0].message.content)
+
+        # -- Inject the model metadata --
+        response_data["generated_by_model"] = actual_model_used
+        response_data["provider"] = request.provider
 
         # ── Merge hardcoded rules + roadmap into the response ──
         if profile:
@@ -252,19 +465,19 @@ class AnalyzeRequest(BaseModel):
     role: str
 
 @app.post("/api/analyze-hallucination")
-async def analyze_hallucination(request: AnalyzeRequest):
+async def analyze_hallucination(request: AnalyzeRequest, http_req: Request):
     try:
         system_prompt = f"""You are an AI auditor.
 A user asked: "{request.question}"
 An expert ({request.role}) provided an answer.
-A general-purpose base model also provided an answer.
+A generic base model provided another answer.
 
-Your task is to analyze how much the base model hallucinated, hallucinated assumed context, or went off-topic compared to the strict, domain-specific expert answer.
+Your job is to analyze the difference. What domain-specific nuances, safety protocols, or technical depth is the base model missing? Did the base model hallucinate generic advice that violates {request.role} standards?
 
-Provide a structured response in JSON format with these exact keys:
-- "analysis": A short Markdown string (2-3 sentences) explaining the base model's shortcomings, hallucinations, or lack of depth compared to the expert.
-- "hallucination_score": Integer 0-100 representing how severe the hallucinations or off-topic generic advice was (100 = completely off-topic/hallucinated, 0 = perfectly accurate and on-topic)."""
-
+Provide your response in JSON format:
+- "hallucination_score": Integer 0-100 (0 = identical, 100 = completely missed the expert constraints / highly generic).
+- "analysis": A punchy, 2-to-3 sentence Markdown paragraph explaining the gap.
+"""
         prompt = f"""
 Expert Answer ({request.role}):
 {request.expert_answer}
@@ -272,25 +485,99 @@ Expert Answer ({request.role}):
 Base Model Answer:
 {request.base_answer}
 """
+        groq_key = http_req.headers.get("x-groq-key") or os.getenv("GROQ_API_KEY")
+        local_groq = Groq(api_key=groq_key) if groq_key else client
+
         loop = asyncio.get_event_loop()
 
         def _call_groq():
-            return client.chat.completions.create(
+            return local_groq.chat.completions.create(
                 model=MODEL,
                 messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt},
+                    {"role": "system", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.1,
+                temperature=0.0,
             )
 
         completion = await loop.run_in_executor(None, _call_groq)
         return json.loads(completion.choices[0].message.content)
 
     except Exception as e:
-        logger.error("analyze error: %s", e)
-        raise HTTPException(status_code=500, detail="Internal Analysis Error")
+        logger.error("analyze-hallucination error: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to analyze hallucination")
+
+# ---------------------------------------------------------------------------
+# API-as-a-Service Endpoint
+# ---------------------------------------------------------------------------
+@app.post("/api/v1/chat/completions")
+async def create_chat_completion(request: Request, body: ChatCompletionRequest):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer ") or auth_header.split(" ")[1] != BYTEME_API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+        
+    role = body.model
+    profile = EXPERT_PROFILES.get(role)
+
+    if not profile and supabase:
+        try:
+            res = supabase.table("custom_roles").select("*").eq("role_name", role).execute()
+            if res.data and len(res.data) > 0:
+                profile = res.data[0]
+        except Exception as e:
+            logger.error(f"Error fetching {role} from Supabase for API query: {e}")
+
+    if profile:
+        role_context = _pretty_role(role)
+        rules_block = "\n".join(
+            f"  Rule {i+1}: {r}" for i, r in enumerate(profile["expert_rules"])
+        )
+        if profile.get("knowledge_base"):
+            rules_block += f"\n\nADDITIONAL STRICT KNOWLEDGE BASE RULES TO ENFORCE:\n{profile['knowledge_base']}"
+
+        roadmap_block = "\n".join(
+            f"  Step {i+1} — {item['step']}: {item['desc']}"
+            for i, item in enumerate(profile["roadmap"])
+        )
+        
+        system_prompt = f"""{profile['core_directive']}
+
+You MUST answer every question strictly from the perspective of a {role_context}.
+Even if a question spans multiple domains, your answer must focus exclusively on
+the aspects that fall under {role_context} expertise.
+
+YOUR MANDATORY EXPERT RULES (you MUST follow ALL of these in every answer):
+{rules_block}
+
+YOUR MANDATORY ROADMAP STRUCTURE (your response must reference or follow this):
+{roadmap_block}
+
+When answering:
+- Filter the question through your {role_context} expertise ONLY.
+- Highlight the concerns, risks, and best practices that a {role_context} would prioritise.
+- Be deeply technical and domain-specific. Generic answers are unacceptable.
+
+FORMATTING REQUIREMENT: You MUST use a hard newline (return carriage) after every single Rule or Step. Do not combine them into a single paragraph. Render them as distinct bullet points or numbered lists."""
+
+    else:
+        system_prompt = "You are a helpful general-purpose AI assistant."
+
+    messages = [{"role": "system", "content": system_prompt}] + body.messages
+    
+    loop = asyncio.get_event_loop()
+    def _call_ai():
+        return client.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            temperature=body.temperature,
+        )
+        
+    try:
+        completion = await loop.run_in_executor(None, _call_ai)
+        return completion.model_dump()
+    except Exception as e:
+        logger.error(f"/v1/chat/completions error: {e}")
+        raise HTTPException(status_code=500, detail="Upstream Provider Error")
 
 if __name__ == "__main__":
     import uvicorn

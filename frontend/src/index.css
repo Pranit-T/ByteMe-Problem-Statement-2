@@ -1,16 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 :root {
   /* Deep, almost black violet base */
-  --bg-primary: #08040f; 
+  --bg-primary: #08040f;
   /* Slightly elevated dark panel */
   --bg-secondary: #120a21;
-  
+
   --text-primary: #ffffff;
   --text-secondary: #9ca3af;
-  
+
   /* The signature neon glow colors */
   --accent-purple: #8b5cf6;
   --accent-magenta: #d946ef;
@@ -29,7 +30,7 @@ body {
 /* The subtle background grid from the reference image */
 .bg-grid {
   background-size: 50px 50px;
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   mask-image: linear-gradient(to bottom, black 30%, transparent 100%);
@@ -51,13 +52,22 @@ body {
 }
 
 /* Custom Scrollbar */
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(139, 92, 246, 0.2);
   border-radius: 10px;
 }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.4); }
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.4);
+}
 
 /* Vibrant Loader */
 .glass-loader {
@@ -70,32 +80,108 @@ body {
 }
 
 @keyframes rotation {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-/* Markdown Adjustments */
-.prose { color: var(--text-primary); font-size: 0.95rem; line-height: 1.6; }
-.prose p { margin-bottom: 1em; }
-.prose h1, .prose h2, .prose h3 { color: #fff; font-weight: 600; margin-top: 1.5em; margin-bottom: 0.5em; }
-.prose a { color: var(--accent-magenta); text-decoration: none; }
-.prose a:hover { text-decoration: underline; }
-.prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
-.prose ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
-.prose pre {
-  background: rgba(0, 0, 0, 0.6);
-  padding: 1em;
-  border-radius: 8px;
-  overflow-x: auto;
-  border: 1px solid rgba(139, 92, 246, 0.2);
-  margin-bottom: 1em;
+/* Custom Prose overrides for Typography Plugin */
+.prose {
+  --tw-prose-body: var(--text-primary);
+  --tw-prose-headings: #ffffff;
+  --tw-prose-lead: var(--text-secondary);
+  --tw-prose-links: var(--accent-magenta);
+  --tw-prose-bold: #ffffff;
+  --tw-prose-counters: var(--accent-purple);
+  --tw-prose-bullets: var(--accent-purple);
+  --tw-prose-hr: rgba(139, 92, 246, 0.2);
+  --tw-prose-quotes: var(--text-secondary);
+  --tw-prose-quote-borders: var(--accent-purple);
+  --tw-prose-captions: var(--text-secondary);
+  --tw-prose-code: #e8b4ff;
+  --tw-prose-pre-code: #e8b4ff;
+  --tw-prose-pre-bg: rgba(0, 0, 0, 0.6);
+  --tw-prose-th-borders: rgba(139, 92, 246, 0.3);
+  --tw-prose-td-borders: rgba(139, 92, 246, 0.1);
 }
+
+.prose a {
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.prose a:hover {
+  text-decoration: underline;
+  text-shadow: 0 0 8px rgba(217, 70, 239, 0.5);
+}
+
 .prose code {
-  font-family: ui-monospace, SFMono-Regular, monospace;
   background: rgba(139, 92, 246, 0.15);
-  color: #e8b4ff;
   padding: 0.2em 0.4em;
   border-radius: 4px;
-  font-size: 0.85em;
+  font-weight: 600;
 }
-.prose pre code { background: transparent; padding: 0; color: inherit; }
+
+.prose pre {
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.prose pre code {
+  background: transparent;
+  padding: 0;
+  font-weight: 400;
+}
+
+/* Base Interactions */
+button,
+a,
+input,
+select,
+label {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Button Active Press */
+button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Icon Animations */
+.icon-anim {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:hover .icon-anim,
+label:hover .icon-anim {
+  transform: scale(1.2) rotate(5deg);
+}
+
+.icon-spin-hover {
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:hover .icon-spin-hover {
+  transform: rotate(180deg) scale(1.1);
+}
+
+/* Smooth fade in for elements */
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
