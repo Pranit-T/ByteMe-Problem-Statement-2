@@ -394,8 +394,18 @@ Provide a structured response in JSON format with these keys:
 
         groq_key = http_req.headers.get("x-groq-key") or os.getenv("GROQ_API_KEY")
         openai_key = http_req.headers.get("x-openai-key") or os.getenv("OPENAI_API_KEY")
+
+        # Validate that we have a key for the requested provider
+        if request.provider == "groq" and not groq_key:
+            raise HTTPException(status_code=401, detail="No Groq API key provided. Please add your key in the Developer API panel.")
+        if request.provider == "openai" and not openai_key:
+            raise HTTPException(status_code=401, detail="No OpenAI API key provided. Please add your key in the Developer API panel.")
+        # For base model (plugin='none') we always use Groq
+        if not groq_key and not openai_key:
+            raise HTTPException(status_code=401, detail="No API key provided. Please add your Groq or OpenAI key in the Developer API panel.")
+
         local_groq = Groq(api_key=groq_key) if groq_key else client
-        local_openai = OpenAI(api_key=openai_key) if openai_key else openai_client
+        local_openai = openai.OpenAI(api_key=openai_key) if openai_key else openai_client
 
         loop = asyncio.get_event_loop()
 
@@ -453,9 +463,14 @@ Provide a structured response in JSON format with these keys:
 
         return response_data
 
+    except HTTPException:
+        raise
     except Exception as e:
+        err_str = str(e).lower()
         logger.error("ask-expert error: %s", e)
-        raise HTTPException(status_code=500, detail="Internal SME Routing Error")
+        if "authentication" in err_str or "api key" in err_str or "invalid_api_key" in err_str or "401" in err_str:
+            raise HTTPException(status_code=401, detail="Invalid API key. Please check and re-enter your Groq or OpenAI key in the Developer API panel.")
+        raise HTTPException(status_code=500, detail=f"Internal SME Routing Error: {str(e)[:200]}")
 
 
 class AnalyzeRequest(BaseModel):

@@ -167,8 +167,11 @@ function App() {
 
             setQuestion('');
         } catch (err) {
-            setExpertResponse({ status: 'error', error: "System collision detected." });
-            setGeminiResponse({ status: 'error', error: "Failed to generate." });
+            const detail = err?.response?.data?.detail;
+            const expertErr = detail ? `Error: ${detail}` : "System collision detected.";
+            const baseErr = detail ? `Error: ${detail}` : "Failed to generate.";
+            setExpertResponse({ status: 'error', error: expertErr });
+            setGeminiResponse({ status: 'error', error: baseErr });
         } finally {
             setIsSubmitting(false);
         }

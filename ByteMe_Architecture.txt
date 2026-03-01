@@ -1,0 +1,106 @@
+# ByteMe Project Architecture & Flowchart
+
+The following diagram is a comprehensive overview of the entire ByteMe project architecture, mapping the flow of data from the user through the frontend (Vercel) to the backend API (Render), and out to the various AI databases and models.
+
+```mermaid
+graph TD
+    %% Define Styles
+    classDef user fill:#6366f1,stroke:#4f46e5,stroke-width:2px,color:white,font-weight:bold;
+    classDef frontend fill:#0ea5e9,stroke:#0284c7,stroke-width:2px,color:white;
+    classDef state fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:white;
+    classDef backend fill:#10b981,stroke:#059669,stroke-width:2px,color:white;
+    classDef db fill:#8b5cf6,stroke:#7c3aed,stroke-width:2px,color:white;
+    classDef ai fill:#f43f5e,stroke:#e11d48,stroke-width:2px,color:white;
+    classDef ext fill:#64748b,stroke:#475569,stroke-width:2px,color:white,stroke-dasharray: 5 5;
+
+    %% -----------------------------------------------------
+    %% Stage 1: The User Interface (Client)
+    %% -----------------------------------------------------
+    User((User)):::user
+
+    subgraph "Frontend Interface (Vercel Deployment)"
+        UI[React + Vite UI <br/> <i>Tailwind CSS / Framer Motion</i>]:::frontend
+        API_JS[api.js Config<br/><i>Axios HTTP Client</i>]:::frontend
+        
+        LocalStore[(Browser Local Storage <br/> <i>Groq & OpenAI Keys</i>)]:::state
+        
+        UI --> |Updates & Reads| LocalStore
+        UI --> |Formats API Request| API_JS
+        LocalStore -.-> |Injects Auth Headers| API_JS
+    end
+
+    User -->|Interacts| UI
+
+    %% -----------------------------------------------------
+    %% Stage 2: The Sever (Render Deployment)
+    %% -----------------------------------------------------
+    subgraph "Backend Server (Render Deployment)"
+        FastAPI[FastAPI Server <br/> <i>Python 3.14</i>]:::backend
+        EnvVars[(Environment Variables <br/><i>Fallback Keys, Supabase DB</i>)]:::state
+        
+        Router[API Router <br/> <i>/api/ask-expert, /api/custom-roles</i>]:::backend
+        
+        FastAPI --> Router
+        EnvVars -.-> |Loads Secrets| FastAPI
+    end
+
+    API_JS -->|REST POST / HTTP Request | FastAPI
+
+    %% -----------------------------------------------------
+    %% Stage 3: Feature Logic & Pipelines
+    %% -----------------------------------------------------
+    subgraph "Core Agent Logic"
+        RuleEngine[Expert Rule Engine <br/> <i>System Prompt Construction</i>]:::backend
+        Hallucination[Hallucination Analyzer <br/> <i>System Collision Detection</i>]:::backend
+        Extraction[Document Extractor <br/> <i>PyPDF / python-docx</i>]:::backend
+        
+        Router --> |Validates Input| RuleEngine
+        Router --> |Cross-References| Hallucination
+        Router --> |Parses Uploads| Extraction
+    end
+
+    %% -----------------------------------------------------
+    %% Stage 4: Cloud Databases & External APIs
+    %% -----------------------------------------------------
+    subgraph "External Providers Data Layer"
+        Supabase[(Supabase PostgreSQL <br/> <i>Custom Roles Database</i>)]:::db
+        Groq[Groq Inference API <br/> <i>Llama 3.3 70B & 8B</i>]:::ai
+        OpenAI[OpenAI Inference API <br/> <i>GPT-4o Mini</i>]:::ai
+        
+        RuleEngine <--> |Reads/Writes Custom Rules| Supabase
+        
+        %% API Routing Logic
+        RuleEngine --> |Main Expert Output| Groq
+        Hallucination --> |Base Fallback Check| OpenAI
+        Extraction --> |Rule Summarization| Groq
+    end
+
+    %% -----------------------------------------------------
+    %% Stage 5: External Headless Tools
+    %% -----------------------------------------------------
+    subgraph "External Integrations"
+        Cursor[Cursor IDE]:::ext
+        Flowise[Flowise]:::ext
+        Postman[Postman / cURL]:::ext
+        
+        Cursor --> |Connects as API-a-a-S| FastAPI
+        Flowise --> |Connects as API-a-a-S| FastAPI
+        Postman --> |Connects as API-a-a-S| FastAPI
+    end
+
+```
+
+## Technology Stack Breakdown
+
+| Layer | Technologies Used | Description |
+| :--- | :--- | :--- |
+| **Frontend Framework** | **React 18, Vite** | Blazing-fast frontend bundler and component-based UI framework. |
+| **Styling & UI** | **Tailwind CSS, Framer Motion** | Utility-first CSS framework combined with a powerful animation library for the premium, glowing glassmorphic aesthetic. |
+| **Icons & Requests** | **Lucide React, Axios** | Beautiful SVG icons and robust Promise-based HTTP client for securely sending queries and custom headers. |
+| **Frontend Hosting** | **Vercel** | Scalable global edge network hosting the compiled static assets, utilizing the `VITE_API_URL` environment variable to bridge to the backend. |
+| **Backend Framework** | **FastAPI, Python 3.14** | High-performance, asynchronous web framework for Python, leveraging fully-typed Pydantic schemas for data validation and CORS middleware. |
+| **Document Processing** | **PyPDF, python-docx** | Robust backend extraction libraries used to rip text content directly from user-uploaded PDFs and Word documents to auto-generate rule sets. |
+| **Backend Hosting** | **Render** | Cloud Platform-as-a-Service acting as the web service running the Uvicorn/FastAPI instance and managing secure backend fallback secrets. |
+| **Database** | **Supabase (PostgreSQL)** | Open-source Firebase alternative acting as the single source of truth for dynamically created custom expert roles (`role_name, core_directive, roadmap, etc.`). |
+| **Primary AI Provider** | **Groq (Llama)** | Ultra-low latency Language Processing Unit (LPU) inference network powering the main Expert Persona generation (`Llama-3.3-70b`) and background File Summarization (`Llama-3.1-8b`). |
+| **Fallback AI Provider** | **OpenAI (GPT-4o-Mini)** | State-of-the-art general purpose model used asynchronously to perform parallel "baseline" checks required by the "System Collision" hallucination detector. |
