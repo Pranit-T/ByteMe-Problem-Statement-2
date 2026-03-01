@@ -501,11 +501,15 @@ Base Model Answer:
         groq_key = http_req.headers.get("x-groq-key") or os.getenv("GROQ_API_KEY")
         local_groq = Groq(api_key=groq_key) if groq_key else client
 
+        if not local_groq:
+            raise HTTPException(status_code=401, detail="No Groq API key provided for hallucination analysis.")
+
         def _call_groq():
             return local_groq.chat.completions.create(
                 model=MODEL,
                 messages=[
-                    {"role": "system", "content": prompt},
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt},
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.0,
@@ -514,9 +518,11 @@ Base Model Answer:
         completion = await asyncio.to_thread(_call_groq)
         return json.loads(completion.choices[0].message.content)
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("analyze-hallucination error: %s", e)
-        raise HTTPException(status_code=500, detail="Failed to analyze hallucination")
+        raise HTTPException(status_code=500, detail=f"Failed to analyze hallucination: {str(e)[:200]}")
 
 # ---------------------------------------------------------------------------
 # API-as-a-Service Endpoint
