@@ -407,8 +407,6 @@ Provide a structured response in JSON format with these keys:
         local_groq = Groq(api_key=groq_key) if groq_key else client
         local_openai = openai.OpenAI(api_key=openai_key) if openai_key else openai_client
 
-        loop = asyncio.get_event_loop()
-
         def _call_ai():
             if request.provider == "openai":
                 try:
@@ -446,7 +444,7 @@ Provide a structured response in JSON format with these keys:
                 )
                 return res, MODEL
 
-        completion, actual_model_used = await loop.run_in_executor(None, _call_ai)
+        completion, actual_model_used = await asyncio.to_thread(_call_ai)
         response_data = json.loads(completion.choices[0].message.content)
 
         # -- Inject the model metadata --
@@ -503,8 +501,6 @@ Base Model Answer:
         groq_key = http_req.headers.get("x-groq-key") or os.getenv("GROQ_API_KEY")
         local_groq = Groq(api_key=groq_key) if groq_key else client
 
-        loop = asyncio.get_event_loop()
-
         def _call_groq():
             return local_groq.chat.completions.create(
                 model=MODEL,
@@ -515,7 +511,7 @@ Base Model Answer:
                 temperature=0.0,
             )
 
-        completion = await loop.run_in_executor(None, _call_groq)
+        completion = await asyncio.to_thread(_call_groq)
         return json.loads(completion.choices[0].message.content)
 
     except Exception as e:
