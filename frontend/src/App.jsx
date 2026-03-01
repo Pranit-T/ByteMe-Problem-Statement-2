@@ -349,7 +349,19 @@ function App() {
             </div>
         );
 
-        const { answer, citations, generated_by_model } = response.data;
+        const { answer, citations, generated_by_model, out_of_scope } = response.data;
+
+        // Out-of-scope guardrail: expert declined the question
+        if (out_of_scope && type === 'expert') return (
+            <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center h-full space-y-4 text-center px-6">
+                <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.2)]">
+                    <span className="text-2xl">🚫</span>
+                </div>
+                <p className="text-amber-400 font-bold text-sm uppercase tracking-widest">Out of Expertise</p>
+                <p className="text-white/50 text-xs leading-relaxed max-w-xs">{answer}</p>
+                <p className="text-white/20 text-[9px] uppercase tracking-widest">Switch to a different expert or rephrase your question.</p>
+            </motion.div>
+        );
 
         return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">

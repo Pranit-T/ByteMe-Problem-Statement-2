@@ -362,27 +362,29 @@ async def ask_expert(request: ExpertRequest, http_req: Request):
 
             system_prompt = f"""{profile['core_directive']}
 
-You MUST answer every question strictly from the perspective of a {role_context}.
-Even if a question spans multiple domains, your answer must focus exclusively on
-the aspects that fall under {role_context} expertise.
+## DOMAIN SCOPE CHECK (MANDATORY — DO THIS FIRST)
+Before answering, determine if the user's question is genuinely relevant to {role_context} expertise.
 
-YOUR MANDATORY EXPERT RULES (you MUST follow ALL of these in every answer):
+- If the question is ENTIRELY outside your domain (e.g., a {role_context} being asked a pure cooking recipe, unrelated personal advice, or a specialized question from a completely different field with zero overlap):
+  Respond ONLY with this exact JSON:
+  {{"out_of_scope": true, "answer": "This question is outside my area of expertise as a {role_context}. Please consult a relevant specialist.", "accuracy": 0, "citations": []}}
+
+- If the question has ANY relevance, overlap, or implication for {role_context} — even partial — you MUST answer it from your expert perspective.
+
+## YOUR EXPERT RULES (Apply only if question is in scope):
 {rules_block}
 
-YOUR MANDATORY ROADMAP STRUCTURE (your response must reference or follow this):
+## YOUR ROADMAP STRUCTURE (Reference this in your answer):
 {roadmap_block}
 
-When answering:
-- Filter the question through your {role_context} expertise ONLY.
-- Highlight the concerns, risks, and best practices that a {role_context} would prioritise.
-- Be deeply technical and domain-specific. Generic answers are unacceptable.
-
+## ANSWER FORMAT (for in-scope questions):
 Provide a structured response in JSON format with these exact keys:
-- "answer": A detailed Markdown string answering from your {role_context} perspective. Must demonstrate adherence to your expert rules.
+- "out_of_scope": false
+- "answer": A detailed Markdown string from your {role_context} perspective.
 - "accuracy": Integer 0-100 representing your domain-specific confidence.
-- "citations": List of strings citing relevant industry standards, codes, papers, or frameworks from the {role_context} field.
+- "citations": List of strings citing relevant standards, papers, or frameworks.
 
-FORMATTING REQUIREMENT: You MUST use a hard newline (return carriage) after every single Rule or Step. Do not combine them into a single paragraph. Render them as distinct bullet points or numbered lists."""
+FORMATTING: Use hard newlines after every Rule or Step. Do not combine them into single paragraphs."""
 
         else:
             # ── Base model mode (plugin='none'): general-purpose answer ──
