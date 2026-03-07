@@ -552,7 +552,7 @@ function App() {
                                 <button onClick={() => setActiveAgentTab('custom')} className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${activeAgentTab === 'custom' ? 'bg-[#008f11] text-white shadow-[0_0_15px_#008f11]' : 'text-white/40 hover:text-white hover:bg-white/10'}`}>Custom Data</button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+                            <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pr-2 space-y-3">
                                 {activeAgentTab === 'system' && (
                                     ['SoftwareEngineer', 'BusinessConsultant', 'AgricultureExpert', 'CivilEngineer', 'Educator'].map(agent => (
                                         <button
@@ -571,20 +571,20 @@ function App() {
                                             <div className="text-center py-8 text-white/40 text-sm italic">No custom agents found.</div>
                                         ) : (
                                             customRoles.map(role => (
-                                                <div key={role.role_name} className="flex space-x-2">
+                                                <div key={role.role_name} className="group relative">
                                                     <button
                                                         onClick={() => { setSelectedExpert(role.role_name); setShowAgentModal(false); }}
-                                                        className={`flex-1 p-4 rounded-xl border text-left transition-all ${selectedExpert === role.role_name ? 'bg-[#008f11]/20 border-[#008f11] text-[#00ff41]' : 'bg-white/5 border-white/10 hover:border-[#008f11]'}`}
+                                                        className={`w-full min-w-0 p-4 rounded-xl border text-left transition-all overflow-hidden ${selectedExpert === role.role_name ? 'bg-[#008f11]/20 border-[#008f11] text-[#00ff41]' : 'bg-white/5 border-white/10 hover:border-[#008f11]'}`}
                                                     >
-                                                        <span className="font-semibold block">{role.role_name}</span>
-                                                        <span className="text-[10px] text-white/50 block mt-1 truncate">{role.core_directive}</span>
+                                                        <span className="font-semibold block truncate pr-6">{role.role_name}</span>
+                                                        <span className="text-[10px] text-white/50 block mt-1 truncate pr-6">{role.core_directive}</span>
                                                     </button>
                                                     <button
                                                         onClick={(e) => handleDeleteCustomRole(e, role.role_name)}
-                                                        className="p-4 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all flex items-center justify-center shrink-0"
+                                                        className="absolute top-3 right-3 p-1.5 rounded-lg text-red-500/70 hover:bg-red-500/20 hover:text-red-300 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
                                                         title="Delete Custom Agent"
                                                     >
-                                                        <Trash2 className="w-5 h-5 icon-spin-hover" />
+                                                        <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
                                             ))
