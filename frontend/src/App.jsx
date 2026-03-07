@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Send, Plus, Sparkles, Clock, X, Terminal, Shield, UserCircle, Linkedin, Github, Mail, MessageSquare, Paperclip, FolderOpen, Trash2, Code, Briefcase, Leaf, HardHat, GraduationCap, Copy, Check } from 'lucide-react';
+import { Bot, Send, Plus, Sparkles, Clock, X, Terminal, Shield, UserCircle, Linkedin, Github, Mail, MessageSquare, Paperclip, FolderOpen, Trash2, Code, Briefcase, Leaf, HardHat, GraduationCap, Copy, Check, Settings } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { askExpert, checkHealth, fetchRoleRules, fetchHallucinationAnalysis, fetchCustomRoles, saveCustomRole, generateRules, uploadKnowledgeFile, deleteCustomRole } from './api';
 const Dither = lazy(() => import('./Dither'));
@@ -814,9 +814,21 @@ function App() {
             {/* API MODAL */}
             <AnimatePresence>
                 {showApiModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowApiModal(false)} />
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="relative bg-[#12121f] border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                    <motion.div
+                        key="api-modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                        onClick={() => setShowApiModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0.95 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="relative bg-[#12121f] border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                        >
                             <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
                                 <h2 className="text-sm font-bold flex items-center">
                                     <Terminal className="w-4 h-4 mr-2 text-[#00D7D2]" />
@@ -894,7 +906,7 @@ function App() {
                                 </div>
                             </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
