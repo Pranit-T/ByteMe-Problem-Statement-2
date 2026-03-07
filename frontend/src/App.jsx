@@ -771,8 +771,14 @@ function App() {
             {/* Sidebar */}
             <AnimatePresence initial={false}>
                 {sidebarOpen && (
-                    <motion.aside initial={{ width: 0 }} animate={{ width: 280 }} exit={{ width: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} className="h-full glass-panel border-r border-white/5 z-10 flex flex-col overflow-x-hidden overflow-y-auto">
-                        <div className="p-6 flex items-center space-x-3 border-b border-white/5">
+                    <motion.aside initial={{ width: 0 }} animate={{ width: 280 }} exit={{ width: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} className="fixed md:relative h-full glass-panel border-r border-white/5 z-50 md:z-10 flex flex-col overflow-x-hidden overflow-y-auto bg-[#0d0208]/95 md:bg-transparent shadow-2xl md:shadow-none">
+                        {/* Mobile Close Button */}
+                        <div className="md:hidden absolute top-4 right-4 z-50">
+                            <button onClick={() => setSidebarOpen(false)} className="p-2 bg-white/10 rounded-full text-white/60 hover:text-white">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="p-6 flex items-center space-x-3 border-b border-white/5 pt-8 md:pt-6">
                             <h2 style={{ fontFamily: '"Press Start 2P", monospace', WebkitTextStroke: '1px #00ff41' }} className="text-transparent uppercase text-lg drop-shadow-[0_0_8px_rgba(0,255,65,0.8)] mt-1 tracking-widest">BYTE EXPERT</h2>
                         </div>
                         <div className="p-4 space-y-3">
@@ -839,23 +845,23 @@ function App() {
             </AnimatePresence>
 
             {/* Main */}
-            <main className="flex-1 flex flex-col h-full relative z-10 pt-4">
-                <header className="min-h-[72px] flex items-center justify-between px-8 py-2">
-                    <div className="flex items-center space-x-6">
+            <main className="flex-1 flex flex-col h-full relative z-10 pt-4 w-full md:w-auto overflow-x-hidden">
+                <header className="min-h-[72px] flex flex-col md:flex-row items-start md:items-center justify-between px-4 md:px-8 py-2 gap-4 md:gap-0">
+                    <div className="flex items-center space-x-3 md:space-x-6 w-full md:w-auto">
                         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 bg-white/5 rounded-lg hover:bg-white/10"><Bot className="w-5 h-5 text-white/60" /></button>
-                        <h1 className="font-bold text-2xl mr-4">Dashboard</h1>
-                        <button onClick={() => setShowApiModal(true)} className="flex items-center space-x-2 bg-[#008f11]/10 text-[#00ff41] border border-[#008f11]/20 px-3 py-1.5 rounded-full hover:bg-[#008f11]/20 transition-colors">
+                        <h1 className="font-bold text-xl md:text-2xl mr-2 md:mr-4 shrink-0">Dashboard</h1>
+                        <button onClick={() => setShowApiModal(true)} className="flex items-center space-x-2 bg-[#008f11]/10 text-[#00ff41] border border-[#008f11]/20 px-3 py-1.5 rounded-full hover:bg-[#008f11]/20 transition-colors ml-auto md:ml-0">
                             <Terminal className="w-3 h-3 icon-anim" />
                             <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Developer API</span>
                         </button>
-                        <div className="flex items-center space-x-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
+                        <div className="flex items-center space-x-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full hidden sm:flex">
                             <div className={`w-2 h-2 rounded-full ${backendReady ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-red-500 animate-pulse'}`}></div>
                             <span className="text-[9px] font-black uppercase tracking-widest text-white/50">{backendReady ? 'Online' : 'Offline'}</span>
                         </div>
                     </div>
 
                     {/* CURRENT PROMPT PANEL */}
-                    <div className="flex-1 max-w-2xl ml-6 group">
+                    <div className="flex-1 w-full md:max-w-2xl md:ml-6 ml-0 mt-2 md:mt-0 group px-4 md:px-0">
                         <div className="glass-panel rounded-xl border border-white/5 px-4 py-3 flex items-start space-x-3 transition-all duration-300 ease-in-out group-hover:max-w-none group-hover:border-[#008f11]/20 group-hover:shadow-[0_0_20px_rgba(0,143,17,0.1)] cursor-default">
                             <div className="flex-shrink-0 mt-0.5">
                                 <MessageSquare className={`w-4 h-4 transition-all duration-300 ${expertResponse?.question ? 'text-[#00ff41] group-hover:scale-110' : 'text-white/20'}`} />
@@ -863,7 +869,7 @@ function App() {
                             <div className="flex-1 min-w-0">
                                 <p className="text-[9px] font-bold uppercase tracking-widest text-white/30 mb-1 transition-colors duration-300 group-hover:text-[#00ff41]/60">Current Prompt</p>
                                 {expertResponse?.question ? (
-                                    <p className="text-xs text-white/80 leading-relaxed line-clamp-2 group-hover:line-clamp-none transition-all duration-300">{expertResponse.question}</p>
+                                    <p className="text-xs text-white/80 leading-relaxed line-clamp-2 md:group-hover:line-clamp-none transition-all duration-300 break-words w-full">{expertResponse.question}</p>
                                 ) : (
                                     <p className="text-xs text-white/20 italic">No active query</p>
                                 )}
@@ -872,7 +878,7 @@ function App() {
                     </div>
                 </header>
 
-                <div className="flex-1 overflow-hidden p-8 gap-6 flex flex-col lg:flex-row max-w-[1600px] mx-auto w-full">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 gap-6 flex flex-col lg:flex-row max-w-[1600px] mx-auto w-full">
                     {/* LEFT PANEL: EXPERT */}
                     <div className="flex-1 flex flex-col glass-panel rounded-2xl border border-white/5 overflow-hidden panel-dynamic panel-dynamic-expert">
                         <div className="p-4 border-b border-white/5 flex items-center justify-between">
@@ -934,16 +940,18 @@ function App() {
                 </div>
 
                 {/* Footer */}
-                <div className="p-8 max-w-[1600px] mx-auto w-full pt-0">
-                    <form onSubmit={handleSubmit} className="flex items-center bg-[#0a1a0a]/90 border border-white/10 rounded-2xl p-2 shadow-2xl backdrop-blur-3xl">
-                        <button type="button" onClick={() => setShowAgentModal(true)} className="px-4 py-3 text-xs font-bold text-[#00ff41] hover:text-white transition-colors bg-white/5 rounded-xl border border-white/5 ml-1 mr-2 whitespace-nowrap">
+                <div className="p-4 md:p-8 max-w-[1600px] mx-auto w-full pt-0">
+                    <form onSubmit={handleSubmit} className="flex flex-col md:flex-row items-stretch md:items-center bg-[#0a1a0a]/90 border border-white/10 rounded-2xl p-2 md:p-2 shadow-2xl backdrop-blur-3xl gap-2 md:gap-0">
+                        <button type="button" onClick={() => setShowAgentModal(true)} className="px-4 py-3 text-xs font-bold text-[#00ff41] hover:text-white transition-colors bg-white/5 rounded-xl border border-white/5 md:ml-1 md:mr-2 whitespace-nowrap w-full md:w-auto mt-1 md:mt-0">
                             {selectedExpert.replace(/([A-Z])/g, ' $1').trim()}
                         </button>
-                        <input type="text" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Query the experts..." className="flex-1 bg-transparent px-4 text-sm outline-none placeholder:text-white/10" />
-                        <button type="button" onClick={() => setShowChatUploadModal(true)} className="p-3 mr-2 text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-all border border-transparent hover:border-white/10">
-                            <Paperclip className="w-5 h-5 icon-anim" />
-                        </button>
-                        <button type="submit" disabled={isSubmitting || !question.trim()} className="bg-gradient-to-r from-[#008f11] to-[#00ff41] px-6 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-20 whitespace-nowrap">
+                        <div className="flex bg-black/40 md:bg-transparent rounded-xl md:rounded-none border border-white/5 md:border-none p-1 md:p-0 flex-1 w-full relative">
+                            <input type="text" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Query the experts..." className="flex-1 bg-transparent px-4 py-3 md:py-0 text-sm outline-none placeholder:text-white/10 w-full" />
+                            <button type="button" onClick={() => setShowChatUploadModal(true)} className="p-3 absolute right-1 top-1 md:static md:right-auto md:top-auto text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-all border border-transparent hover:border-white/10">
+                                <Paperclip className="w-5 h-5 icon-anim" />
+                            </button>
+                        </div>
+                        <button type="submit" disabled={isSubmitting || !question.trim()} className="bg-gradient-to-r from-[#008f11] to-[#00ff41] px-6 py-4 md:py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-20 whitespace-nowrap w-full md:w-auto mt-2 md:mt-0">
                             {isSubmitting ? 'Analyzing...' : 'Send Query'}
                         </button>
                     </form>

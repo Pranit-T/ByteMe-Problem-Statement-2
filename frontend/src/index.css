@@ -247,6 +247,27 @@ button:hover .icon-spin-hover {
   z-index: 20;
 }
 
+/* Disable flex-resizing on mobile devices */
+@media (max-width: 1024px) {
+  .panel-flex-container {
+    flex-direction: column;
+    height: auto !important;
+  }
+
+  .panel-flex-container>.panel-flex-child {
+    flex: none !important;
+    min-height: 400px;
+  }
+
+  .panel-flex-container:hover>.panel-flex-child {
+    flex: none !important;
+  }
+
+  .panel-flex-container>.panel-flex-child:hover {
+    flex: none !important;
+  }
+}
+
 .panel-flex-child.panel-dynamic-base:hover {
   border-color: rgba(0, 143, 17, 0.5) !important;
   box-shadow:
