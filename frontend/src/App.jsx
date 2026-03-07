@@ -480,22 +480,22 @@ function App() {
 
                         {/* Feature Cards */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-2">
-                            <div className="p-4 rounded-xl bg-[#00D7D2]/5 border border-[#00D7D2]/15">
+                            <div className="p-4 rounded-xl bg-[#00D7D2]/20 border border-[#00D7D2]/30">
                                 <Shield className="w-5 h-5 text-[#00D7D2] mb-2" />
                                 <h4 className="text-xs font-bold text-[#E4E3EC] mb-1">Expert Guardrails</h4>
                                 <p className="text-[10px] text-white/40 leading-relaxed">Each SME agent has domain-specific rules injected as system prompts to keep responses focused and accurate.</p>
                             </div>
-                            <div className="p-4 rounded-xl bg-[#8E72EE]/5 border border-[#8E72EE]/15">
+                            <div className="p-4 rounded-xl bg-[#8E72EE]/20 border border-[#8E72EE]/30">
                                 <Sparkles className="w-5 h-5 text-[#8E72EE] mb-2" />
                                 <h4 className="text-xs font-bold text-[#E4E3EC] mb-1">Hallucination Audit</h4>
                                 <p className="text-[10px] text-white/40 leading-relaxed">Responses are cross-checked against a base model and scored for factual drift with a visual gauge.</p>
                             </div>
-                            <div className="p-4 rounded-xl bg-[#00D7D2]/5 border border-[#00D7D2]/15">
+                            <div className="p-4 rounded-xl bg-[#00D7D2]/20 border border-[#00D7D2]/30">
                                 <Code className="w-5 h-5 text-[#00D7D2] mb-2" />
                                 <h4 className="text-xs font-bold text-[#E4E3EC] mb-1">Multiple Domains</h4>
                                 <p className="text-[10px] text-white/40 leading-relaxed">Software Engineering, Business Strategy, Agriculture, Construction, and more — or create your own custom agent.</p>
                             </div>
-                            <div className="p-4 rounded-xl bg-[#8E72EE]/5 border border-[#8E72EE]/15">
+                            <div className="p-4 rounded-xl bg-[#8E72EE]/20 border border-[#8E72EE]/30">
                                 <Bot className="w-5 h-5 text-[#8E72EE] mb-2" />
                                 <h4 className="text-xs font-bold text-[#E4E3EC] mb-1">Custom Agents</h4>
                                 <p className="text-[10px] text-white/40 leading-relaxed">Upload your own knowledge files and rulebooks to create specialized agents for any domain.</p>
@@ -593,7 +593,7 @@ function App() {
         // Out-of-scope guardrail: expert declined the question
         if (out_of_scope && type === 'expert') return (
             <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center h-full space-y-4 text-center px-6">
-                <div className="w-14 h-14 rounded-full bg-[#8E72EE]/10 border border-[#8E72EE]/30 flex items-center justify-center shadow-[0_0_20px_rgba(0,255,65,0.2)]">
+                <div className="w-14 h-14 rounded-full bg-[#8E72EE]/30 border border-[#8E72EE]/50 flex items-center justify-center shadow-[0_0_20px_rgba(0,255,65,0.2)]">
                     <span className="text-2xl">🚫</span>
                 </div>
                 <p className="text-[#8E72EE] font-bold text-sm uppercase tracking-widest">Out of Expertise</p>
@@ -604,7 +604,8 @@ function App() {
 
         return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                <div className={`prose prose-invert max-w-none text-white/90 text-sm leading-relaxed p-6 rounded-2xl border backdrop-blur-sm shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] ${type === 'expert' ? 'bg-[#0aada9]/10 border-[#0aada9]/20' : 'bg-black/20 border-white/5'}`}>
+                <div
+                    className={`prose prose-invert max-w-none text-white/90 text-sm leading-relaxed p-6 rounded-2xl border backdrop-blur-sm shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] ${type === 'expert' ? 'bg-[#00D7D2]/30 border-[#00D7D2]/40' : 'bg-black/60 border-white/20'}`}>
                     <ReactMarkdown>{answer}</ReactMarkdown>
                 </div>
 
@@ -1044,7 +1045,7 @@ function App() {
             </AnimatePresence>
 
             {/* Main */}
-            <main className="flex-1 flex flex-col h-full relative z-10 pt-4 w-full md:w-auto overflow-x-hidden">
+            <main className="flex-1 flex flex-col h-full relative z-10 pt-4 w-full md:w-auto min-w-0 overflow-x-hidden">
                 <header className="min-h-[72px] flex flex-col md:flex-row items-start md:items-center justify-between px-4 md:px-8 py-2 gap-4 md:gap-0">
                     <div className="flex items-center space-x-3 md:space-x-6 w-full md:w-auto">
                         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 bg-white/5 rounded-lg hover:bg-white/10"><Bot className="w-5 h-5 text-white/60" /></button>
@@ -1143,7 +1144,7 @@ function App() {
                         <>
                             <div className="p-3 flex justify-between items-center border-b border-white/5">
                                 <h3 className="text-[10px] font-bold uppercase text-white/40 tracking-widest panel-header-label whitespace-nowrap">Base Model</h3>
-                                <div className="flex bg-black/40 border border-white/10 rounded-lg p-0.5">
+                                <div className="flex bg-black/60 border border-white/20 rounded-lg p-0.5">
                                     <button onClick={() => setModelProvider('groq')} className={`px-2 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md ${modelProvider === 'groq' ? 'bg-[#8E72EE] text-[#191927] shadow-[0_0_10px_rgba(0,255,65,0.5)]' : 'text-white/40 hover:text-white'}`}>Groq</button>
                                     <button onClick={() => setModelProvider('openai')} className={`px-2 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md ${modelProvider === 'openai' ? 'bg-[#0aada9] text-white shadow-[0_0_10px_rgba(0,143,17,0.5)]' : 'text-white/40 hover:text-white'}`}>OpenAI</button>
                                 </div>
@@ -1164,7 +1165,7 @@ function App() {
                         </div>
                     ) : expertResponse?.status === 'success' ? (
                         <>
-                            <div className="p-3 border-b border-[#8E72EE]/10 flex items-center justify-between bg-black/20">
+                            <div className="p-3 border-b border-[#8E72EE]/20 flex items-center justify-between bg-black/60">
                                 <h3 className="text-[10px] font-bold uppercase text-[#8E72EE] tracking-widest flex items-center panel-header-label whitespace-nowrap">
                                     <Sparkles className="w-3 h-3 mr-2 shrink-0" />
                                     Hallucination & Depth
