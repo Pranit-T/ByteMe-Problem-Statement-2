@@ -480,8 +480,8 @@ function App() {
 
                         {/* Feature Cards */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-2">
-                            <div className="p-4 rounded-xl bg-[#00D7D2]/20 border border-[#00D7D2]/30">
-                                <Shield className="w-5 h-5 text-[#00D7D2] mb-2" />
+                            <div className="p-4 rounded-xl bg-[#8E72EE]/20 border border-[#8E72EE]/30">
+                                <Shield className="w-5 h-5 text-[#8E72EE] mb-2" />
                                 <h4 className="text-xs font-bold text-[#E4E3EC] mb-1">Expert Guardrails</h4>
                                 <p className="text-[10px] text-white/40 leading-relaxed">Each SME agent has domain-specific rules injected as system prompts to keep responses focused and accurate.</p>
                             </div>
@@ -490,8 +490,8 @@ function App() {
                                 <h4 className="text-xs font-bold text-[#E4E3EC] mb-1">Hallucination Audit</h4>
                                 <p className="text-[10px] text-white/40 leading-relaxed">Responses are cross-checked against a base model and scored for factual drift with a visual gauge.</p>
                             </div>
-                            <div className="p-4 rounded-xl bg-[#00D7D2]/20 border border-[#00D7D2]/30">
-                                <Code className="w-5 h-5 text-[#00D7D2] mb-2" />
+                            <div className="p-4 rounded-xl bg-[#8E72EE]/20 border border-[#8E72EE]/30">
+                                <Code className="w-5 h-5 text-[#8E72EE] mb-2" />
                                 <h4 className="text-xs font-bold text-[#E4E3EC] mb-1">Multiple Domains</h4>
                                 <p className="text-[10px] text-white/40 leading-relaxed">Software Engineering, Business Strategy, Agriculture, Construction, and more — or create your own custom agent.</p>
                             </div>
