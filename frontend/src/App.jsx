@@ -954,7 +954,7 @@ function App() {
                         transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
                         onMouseEnter={() => setSidebarCollapsed(false)}
                         onMouseLeave={() => setSidebarCollapsed(true)}
-                        className="fixed md:relative h-full glass-panel border-r border-white/5 z-50 md:z-10 flex flex-col overflow-hidden bg-[#191927]/95 md:bg-transparent shadow-2xl md:shadow-none"
+                        className="fixed md:relative h-full glass-panel border-r border-white/5 z-50 md:z-10 flex flex-col overflow-hidden shadow-2xl md:shadow-none"
                     >
                         {/* Mobile Close Button */}
                         <div className="md:hidden absolute top-4 right-4 z-50">
@@ -1119,7 +1119,7 @@ function App() {
                 transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
                 onMouseEnter={() => setRightSidebarCollapsed(false)}
                 onMouseLeave={() => setRightSidebarCollapsed(true)}
-                className="hidden md:flex h-full glass-panel border-l border-white/5 flex-col overflow-hidden bg-[#191927]/95 md:bg-transparent"
+                className="hidden md:flex h-full glass-panel border-l border-white/5 flex-col overflow-hidden z-20 relative"
             >
                 {/* Header */}
                 <div className={`p-4 flex items-center border-b border-white/5 ${rightSidebarCollapsed ? 'justify-center px-3' : 'px-5'}`}>
