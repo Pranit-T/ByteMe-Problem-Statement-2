@@ -605,7 +605,7 @@ function App() {
         return (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
                 <div
-                    className={`prose prose-invert max-w-none text-white/90 text-sm leading-relaxed p-6 rounded-2xl border backdrop-blur-sm shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] ${type === 'expert' ? 'bg-[#00D7D2]/30 border-[#00D7D2]/40' : 'bg-black/60 border-white/20'}`}>
+                    className={`prose prose-invert max-w-none text-white/90 text-sm leading-relaxed p-6 rounded-2xl border backdrop-blur-sm shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] ${type === 'expert' ? 'bg-[#00D7D2]/40 border-[#00D7D2]/50' : 'bg-black/60 border-white/20'}`}>
                     <ReactMarkdown>{answer}</ReactMarkdown>
                 </div>
 
