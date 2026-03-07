@@ -1,9 +1,20 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bot, Send, Plus, Sparkles, Clock, X, Terminal, Shield, UserCircle, Linkedin, Github, Mail, MessageSquare, Paperclip, FolderOpen, Trash2, Code, Briefcase, Leaf, HardHat, GraduationCap, Copy, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { askExpert, checkHealth, fetchRoleRules, fetchHallucinationAnalysis, fetchCustomRoles, saveCustomRole, generateRules, uploadKnowledgeFile, deleteCustomRole } from './api';
+const Dither = lazy(() => import('./Dither'));
 import './index.css';
+
+class DitherErrorBoundary extends React.Component {
+    constructor(props) { super(props); this.state = { hasError: false }; }
+    static getDerivedStateFromError() { return { hasError: true }; }
+    componentDidCatch(err) { console.warn('Dither background failed:', err); }
+    render() {
+        if (this.state.hasError) return <div className="absolute inset-0 bg-grid" />;
+        return this.props.children;
+    }
+}
 
 function App() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -632,7 +643,22 @@ function App() {
 
     return (
         <div className="h-screen w-full flex overflow-hidden text-white relative bg-[#191927]">
-            <div className="absolute inset-0 bg-grid pointer-events-none z-0"></div>
+            <div className="absolute inset-0 pointer-events-none z-0">
+                <DitherErrorBoundary>
+                    <Suspense fallback={<div className="absolute inset-0 bg-[#191927]" />}>
+                        <Dither
+                            waveColor={[0.55, 0.44, 0.93]}
+                            disableAnimation={false}
+                            enableMouseInteraction={true}
+                            mouseRadius={0.3}
+                            colorNum={5}
+                            waveAmplitude={0.4}
+                            waveFrequency={3}
+                            waveSpeed={0.05}
+                        />
+                    </Suspense>
+                </DitherErrorBoundary>
+            </div>
 
             {/* AGENT SELECTION POP-UP */}
             <AnimatePresence>
