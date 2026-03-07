@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
     Send, Paperclip, UserCircle, Bot, Sparkles, ChevronLeft, ChevronRight,
-    Plus, FolderOpen, MessageSquare, LogOut, Settings, User, X, Clock, Terminal, Linkedin, Github, Mail
+    Plus, FolderOpen, MessageSquare, LogOut, Settings, User, X, Clock, Terminal, Linkedin, Github, Mail, Trash2
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'framer-motion';
-import { askExpert, checkHealth, fetchRoleRules, fetchHallucinationAnalysis, fetchCustomRoles, saveCustomRole, generateRules, uploadKnowledgeFile } from './api';
+import { askExpert, checkHealth, fetchRoleRules, fetchHallucinationAnalysis, fetchCustomRoles, saveCustomRole, generateRules, uploadKnowledgeFile, deleteCustomRole } from './api';
 import './index.css';
 
 function App() {
@@ -159,6 +159,23 @@ function App() {
         setGeminiResponse(null);
         setAnalysisResponse(null);
         setIsSubmitting(false);
+    };
+
+    const handleDeleteCustomRole = async (e, roleName) => {
+        e.stopPropagation(); // prevent clicking the button from selecting the agent
+        if (!confirm(`Are you sure you want to delete the expert "${roleName}"?`)) return;
+
+        try {
+            await deleteCustomRole(roleName);
+            // Remove from local list to update UI immediately
+            setCustomRoles(prev => prev.filter(r => r.role_name !== roleName));
+            if (selectedExpert === roleName) {
+                setSelectedExpert('SoftwareEngineer');
+            }
+        } catch (error) {
+            alert("Failed to delete custom role. Check console for details.");
+            console.error(error);
+        }
     };
 
     const loadHistoryItem = (item) => {
@@ -554,14 +571,22 @@ function App() {
                                             <div className="text-center py-8 text-white/40 text-sm italic">No custom agents found.</div>
                                         ) : (
                                             customRoles.map(role => (
-                                                <button
-                                                    key={role.role_name}
-                                                    onClick={() => { setSelectedExpert(role.role_name); setShowAgentModal(false); }}
-                                                    className={`w-full p-4 rounded-xl border text-left transition-all ${selectedExpert === role.role_name ? 'bg-[#008f11]/20 border-[#008f11] text-[#00ff41]' : 'bg-white/5 border-white/10 hover:border-[#008f11]'}`}
-                                                >
-                                                    <span className="font-semibold block">{role.role_name}</span>
-                                                    <span className="text-[10px] text-white/50 block mt-1 truncate">{role.core_directive}</span>
-                                                </button>
+                                                <div key={role.role_name} className="flex space-x-2">
+                                                    <button
+                                                        onClick={() => { setSelectedExpert(role.role_name); setShowAgentModal(false); }}
+                                                        className={`flex-1 p-4 rounded-xl border text-left transition-all ${selectedExpert === role.role_name ? 'bg-[#008f11]/20 border-[#008f11] text-[#00ff41]' : 'bg-white/5 border-white/10 hover:border-[#008f11]'}`}
+                                                    >
+                                                        <span className="font-semibold block">{role.role_name}</span>
+                                                        <span className="text-[10px] text-white/50 block mt-1 truncate">{role.core_directive}</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => handleDeleteCustomRole(e, role.role_name)}
+                                                        className="p-4 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all flex items-center justify-center shrink-0"
+                                                        title="Delete Custom Agent"
+                                                    >
+                                                        <Trash2 className="w-5 h-5 icon-spin-hover" />
+                                                    </button>
+                                                </div>
                                             ))
                                         )}
                                         <button

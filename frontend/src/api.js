@@ -80,6 +80,16 @@ export const saveCustomRole = async (roleData) => {
     }
 };
 
+export const deleteCustomRole = async (roleName) => {
+    try {
+        const response = await axios.delete(`${API_BASE_URL}/custom-roles/${roleName}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting custom role:', error);
+        throw error;
+    }
+};
+
 export const generateRules = async (roleName, knowledgeBase = null, provider = 'groq') => {
     try {
         const payload = { role_name: roleName, provider };

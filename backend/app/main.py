@@ -255,6 +255,17 @@ async def create_custom_role(role: CustomRole):
         logger.error(f"Failed to save role: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.delete("/api/custom-roles/{role_name}")
+async def delete_custom_role(role_name: str):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    try:
+        res = supabase.table("custom_roles").delete().eq("role_name", role_name).execute()
+        return {"status": "success", "data": res.data}
+    except Exception as e:
+        logger.error(f"Failed to delete role {role_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/extract-text")
 async def extract_text(file: UploadFile = File(...)):
     try:
